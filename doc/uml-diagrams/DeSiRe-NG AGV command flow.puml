@@ -1,0 +1,31 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+!theme cerulean
+
+autonumber
+
+actor Operator
+participant AGV
+participant Backend
+
+AGV --> AGV: Boot up
+AGV -> Backend: Subscribe to command stream
+
+loop
+Operator -> Backend: AGV command <xyz>
+
+alt other pending command present
+Backend --> Backend: Schedule command <xyz>
+Backend --> Backend: Wait for pending command\nto be completed
+end
+
+loop while command is not acknowledged
+Backend -> AGV: Publish command <xyz>
+end
+
+AGV -> Backend: Acknowledge command <xyz>
+AGV --> AGV: Execute command <xyz>
+AGV -> Backend: Complete command <xyz>
+end
+
+@enduml

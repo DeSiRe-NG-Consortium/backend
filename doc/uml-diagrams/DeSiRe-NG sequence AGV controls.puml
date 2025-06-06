@@ -1,0 +1,84 @@
+@startuml
+!theme cerulean
+title Campaign Flow
+
+actor Operator
+participant AGV
+participant "NURO Backend" as BackendNuro
+participant "TUI Backend" as BackendTui
+participant Keycloak
+
+== Startup ==
+
+AGV -> AGV : Start
+AGV -> Keycloak : Login
+return Token
+AGV -> BackendNuro : GET /agvs/{id}/control-events/stream
+return Event stream
+AGV -> BackendNuro : POST /agvs/{id}/status-events\nPayload: status:ONLINE
+BackendNuro -> BackendNuro: Retrieve pending controls from queue
+alt Pending event present
+BackendNuro -> AGV: Control event
+
+else
+loop
+...wait 30 seconds...
+AGV -> BackendNuro : POST /agvs/{id}/status-events\nPayload: status:IDLE
+end
+end
+
+== Start Campaign ==
+
+Operator -> BackendNuro : POST /campaigns\nPayload: agvs=<agv_ids>
+BackendNuro -> BackendNuro : Save campaign
+BackendNuro -> BackendTui : POST /campaigns\nPayload: <campaign_id>, <campaign_name>,\n<client_id>, <endpoint_id>
+
+BackendNuro -> AGV : Control event\nPayload: START_CAMPAIGN,campaign=<campaign_id>
+AGV -> BackendNuro : POST /agvs/{id}/status-events\nPayload: status:START_COLLECTING,campaign=<campaign_id>
+BackendNuro -> BackendNuro: Save event
+
+loop until STOP_COLLECTING event
+AGV -> BackendNuro : POST /agv-positions\nPayload: <position data>
+activate AGV
+BackendNuro -> BackendNuro : Save position data
+BackendNuro -> BackendTui : POST /agv-positions\nPayload: <agv_id>, {<timestamp>, <position>}
+end
+
+== Go-to Requests ==
+
+loop
+Operator -> BackendNuro : POST /agvs/{id}/control-events\nPayload: <coordinates>
+BackendNuro -> BackendNuro : Save event to queue\nCreate <job_id> for control request
+BackendNuro -> AGV : Control event\nPayload: GO_TO,job=<job_id>,position=<position>
+AGV -> BackendNuro : POST //agvs/{id}/status-events\nPayload: START_GO_TO,job=<job_id>
+BackendNuro -> BackendNuro : Save event
+...go to position...
+AGV -> BackendNuro : POST /agvs/{id}/status-events\nPayload: FINISH_GO_TO,job=<job_id>
+BackendNuro -> BackendNuro : Save event, remove from queue
+end
+...
+
+== End Campaign ==
+
+Operator -> BackendNuro : PATCH /campaigns/{id}
+BackendNuro -> BackendNuro : Save campaign
+BackendNuro -> AGV : Control event\nPayload: COMPLETE_CAMPAIGN,campaign=<campaign_id>
+AGV -> BackendNuro : POST /agvs/{id}/status-events\nPayload: STOP_COLLECTING,campaign=<campaign_id>
+deactivate AGV
+BackendNuro -> BackendNuro: Save event
+BackendNuro -> BackendTui : PATCH /campaigns/<campaign_id>\nPayload: state=COMPLETED
+
+
+loop
+AGV -> BackendNuro : POST /agvs/{id}/status-events\nPayload: IDLE
+...wait 30 seconds...
+end
+
+== Shutdown ==
+AGV -> BackendNuro : POST /agvs/{id}/status-events\nPayload: SHUTDOWN
+BackendNuro -> BackendNuro : Save event
+AGV -> AGV : Unsubscribe from stream
+AGV -> AGV : Shutdown
+
+footer DeSiRe-NG – NURO
+@enduml

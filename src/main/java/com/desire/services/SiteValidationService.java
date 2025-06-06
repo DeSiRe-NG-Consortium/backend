@@ -1,0 +1,77 @@
+/*
+ * Copyright 2023–2025 Nuromedia GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.desire.services;
+
+import java.util.Optional;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import com.desire.model.entities.Organizations;
+import com.desire.model.entities.Sites;
+import com.desire.model.repositories.OrganizationRepository;
+import com.desire.utils.UserSession;
+import com.desire.validations.Validation;
+import com.desire.validations.codes.SystemErrorCodes;
+import com.desire.validations.exceptions.ValidationException;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
+
+@Service
+@RequiredArgsConstructor(onConstructor = @__(@Autowired))
+public class SiteValidationService {
+
+  private final @NonNull OrganizationRepository organizationDao;
+
+  public void validatePost(String organizationId) throws ValidationException {
+    Validation validations = new Validation();
+
+    Optional<Organizations> organizationOptional = organizationDao.findById(organizationId);
+
+    if (organizationOptional.isEmpty()) {
+      validations.addError(SystemErrorCodes.RESOURCE_NOT_FOUND, "Organization not found");
+    }
+
+    if (StringUtils.isNotBlank(organizationId)
+        && !organizationId.equals(UserSession.organizationId())) {
+      validations.addError(SystemErrorCodes.FORBIDDEN,
+          "User is not allowed to manage sites for the given organization");
+    }
+
+    if (validations.hasErrors()) {
+      throw new ValidationException(validations);
+    }
+  }
+
+  public void validateEdit(Optional<Sites> siteOptional) throws ValidationException {
+    Validation validations = new Validation();
+
+    if (siteOptional.isEmpty()) {
+      validations.addError(SystemErrorCodes.RESOURCE_NOT_FOUND, "Site not found");
+
+      throw new ValidationException(validations);
+    }
+
+    if (!siteOptional.get().getOrganization().getId().equals(UserSession.organizationId())) {
+      validations.addError(SystemErrorCodes.FORBIDDEN,
+          "User is not allowed to manage sites for the given organization");
+    }
+
+    if (validations.hasErrors()) {
+      throw new ValidationException(validations);
+    }
+  }
+}

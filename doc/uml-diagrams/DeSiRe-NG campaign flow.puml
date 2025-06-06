@@ -1,0 +1,57 @@
+@startuml
+'https://plantuml.com/activity-diagram-beta
+
+!theme cerulean
+
+start
+#ad7fa8:AGV online;
+#3465a4:Idle mode;
+
+#c4a000:Start campaign;
+
+fork
+
+while (More locations\nto inspect?)
+#c4a000:Publish GO_TO command;
+end while
+
+#c4a000:Complete campaign;
+
+fork again
+repeat
+if (GO_TO command available?) then (yes)
+  #3465a4:Assisted data\ncollection mode;
+
+  repeat
+    #ad7fa8:Move to requested location;
+    #ad7fa8:Publish position data;
+  repeat while (Location not reached?)
+else (no)
+  #3465a4:Autonomous data\ncollection mode;
+  #ad7fa8:Navigate autonomously;
+  #ad7fa8:Publish position data;
+endif
+repeat while (Campaign running?)
+
+fork again
+repeat
+#ce5c00:Collect measurement data;
+
+#ce5c00:Merge position and\nmeasurement data;
+repeat while (Campaign running?)
+
+end fork
+
+#3465a4:Idle mode;
+#c4a000:View/analyse results;
+stop
+
+legend left
+    |Colour| Type |
+    |<#c4a000>| Operator action|
+    |<#ad7fa8>| AGV action|
+    |<#3465a4>| AGV mode|
+    |<#ce5c00>| Measurement box action|
+end legend
+
+@enduml

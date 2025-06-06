@@ -1,0 +1,14 @@
+# Local property files
+/src/main/resources/application-local.properties
+/src/main/resources/git.properties
+# Target dir
+/target/
+# Project files
+/*.iml
+/.idea/**
+/.settings/**
+/.classpath
+/.factorypath
+/.project
+# Generated files
+/doc/uml-diagrams/*.png

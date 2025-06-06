@@ -1,0 +1,88 @@
+@startmindmap
+!theme cerulean
+
+title REST Endpoints
+
+* /
+
+** agv
+*** /commands
+****[#Application] GET
+**** /stream
+*****[#Application] GET
+*** /status-events
+****[#Application] GET
+****[#Technology] POST
+
+** agvs
+***[#Application] GET
+***[#Business] /{id}
+****[#Application] GET
+**** /commands
+*****[#Application] GET
+*****[#Technology] POST
+*****[#Business] /{id}
+******[#Application] GET
+******[#Physical] PATCH
+**** /sites
+*****[#Application] GET
+*****[#Business] /{id}
+******[#Application] GET
+******[#Technology] PUT
+******[#Implementation] DELETE
+**** /status-events
+*****[#Application] GET
+
+** agv-measurements
+***[#Application] GET
+
+** agv-positions
+***[#Application] GET
+***[#Technology] POST
+****_ <campaign_id>, <agv_id>, [<positions>]
+
+** campaigns
+***[#Application] GET
+***[#Technology] POST
+****_ <site_id>, <name>
+***[#Business] /{id}
+****[#Application] GET
+****[#Physical] PATCH
+*****_ <state>, <name>
+**** /interpolated-measurements
+*****[#Application] GET
+
+** mobile-measurements
+***[#Application] GET
+***[#Technology] POST
+
+** organizations
+***[#Application] GET
+***[#Technology] POST
+***[#Business] /{id}
+****[#Application] GET
+****[#Physical] PATCH
+****[#Implementation] DELETE
+**** /sites
+*****[#Application] GET
+*****[#Technology] POST
+*****[#Business] /{id}
+******[#Application] GET
+******[#Physical] PATCH
+*******_ <name>
+******[#Implementation] DELETE
+
+** user
+***[#Application] GET
+
+** users
+***[#Application] GET
+***[#Business] /{id}
+****[#Application] GET
+
+++ 5g-statistics
+***[#Application] GET
+
+footer DeSiRe-NG – NURO
+
+@endmindmap
